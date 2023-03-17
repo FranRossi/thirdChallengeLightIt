@@ -39,15 +39,14 @@ class ShowCommand extends Command
     private function showMovie($movieName,$optionFullPlot, OutputInterface $output)
     {
         $movie = $this->getMovie($movieName, $optionFullPlot);
-        $table = new Table($output);
-        //Make an output an info message with the title and year of the movie
-        $output->writeln('<info>' . $movie['Title'] . ' - ' . $movie['Year'] . '</info>');
 
-        $table->setHeaders($this->setMovieHeaders())
-            ->setRows($this->setMovieRows($movie))
-            ->setVertical()
-            ->render();
-        
+        try {
+            $this->assertMovie($movie);
+        } catch (\Exception $e) {
+            $output->writeln('<error>' . $e->getMessage() . '</error>');
+            return;
+        }
+        $this->displayMovie($movie, $output);
     }
 
     private function getMovie($movieName, $optionFullPlot)
@@ -71,9 +70,25 @@ class ShowCommand extends Command
 
     private function setMovieRows($movie)
     {
-        //Adds rows to the table of type TableSeparator|array
         return [
             [$movie['Title'], $movie['Year'], $movie['Rated'], $movie['Released'], $movie['Runtime'], $movie['Genre'], $movie['Director'], $movie['Writer'], $movie['Actors'], $movie['Plot'], $movie['Language'], $movie['Country'], $movie['Awards'], $movie['Poster'], $movie['Metascore'], $movie['imdbRating'], $movie['imdbVotes'], $movie['imdbID'], $movie['Type'], $movie['Response']]
         ];
+    }
+
+    private function assertMovie($movie)
+    {
+        if ($movie['Response'] === 'False') {
+            throw new \Exception($movie['Error']);
+        }
+    }
+
+    private function displayMovie($movie, OutputInterface $output)
+    {
+        $output->writeln('<info>' . $movie['Title'] . ' - ' . $movie['Year'] . '</info>');
+        $table = new Table($output);
+        $table->setHeaders($this->setMovieHeaders())
+            ->setRows($this->setMovieRows($movie))
+            ->setVertical()
+            ->render();
     }
 }
